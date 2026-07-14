@@ -72,13 +72,11 @@ class KSAClient:
     ) -> list[dict]:
 
         vessels = []
-
-        for item in self.search(watch):
-
-        print(item)
+    
         
         for item in self.search(watch):
 
+            print(item)
             #
             # 노선 확인
             #
