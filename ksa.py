@@ -52,6 +52,12 @@ class KSAClient:
 
         data = response.json()
 
+        print(data.keys())
+
+        print("result :", len(data.get("result", [])))
+
+        print("resultAll :", len(data.get("resultAll", [])))
+
         if data.get("errCode") != 0:
             raise RuntimeError(
                 f"KSA Error : {data.get('errCode')} "
@@ -67,6 +73,10 @@ class KSAClient:
 
         vessels = []
 
+        for item in self.search(watch):
+
+        print(item)
+        
         for item in self.search(watch):
 
             #
