@@ -8,7 +8,6 @@ import os
 BASE_URL = "https://island.theksa.co.kr"
 
 BOOKING_URL = f"{BASE_URL}/page/booking"
-
 API_URL = f"{BASE_URL}/booking/selectDepartureList"
 
 REQUEST_TIMEOUT = 20
@@ -39,11 +38,7 @@ COMMON_PAYLOAD = {
 # ==========================================================
 
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
-
-TELEGRAM_CHAT_ID = os.environ.get(
-    "TELEGRAM_CHAT_ID",
-    "8622503258",
-)
+TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 # ==========================================================
 # State
@@ -59,7 +54,7 @@ STATE_FILE = "state.json"
 @dataclass(frozen=True)
 class WatchItem:
 
-    name: str
+    route: str
 
     masterdate: str
 
@@ -79,11 +74,11 @@ class WatchItem:
 WATCH_LIST = [
 
     #
-    # 2026-08-14
-    # 묵호 -> 울릉도 도동
+    # 묵호 → 울릉도 도동
     #
     WatchItem(
-        name="묵호 → 울릉도 도동",
+        route="묵호 → 울릉도 도동",
+
         masterdate="2026-08-14",
 
         f_portid="4403",
@@ -94,11 +89,11 @@ WATCH_LIST = [
     ),
 
     #
-    # 2026-08-17
-    # 울릉도 도동 -> 묵호
+    # 울릉도 도동 → 묵호
     #
     WatchItem(
-        name="울릉도 도동 → 묵호",
+        route="울릉도 도동 → 묵호",
+
         masterdate="2026-08-17",
 
         f_portid="4311",
