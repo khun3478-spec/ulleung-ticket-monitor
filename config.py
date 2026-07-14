@@ -83,23 +83,36 @@ WATCH_LIST = [
     WatchItem(
         route="묵호 → 울릉도 도동",
         masterdate="2026-08-14",
-        departure_time="12:40",
+
+        # 시간은 더 이상 고정하지 않음
+        departure_time="",
+
         vessel="씨스타 1",
-        t_portidlist="4403",
-        t_portsubidlist="0",
-        f_portidlist="4311",
-        f_portsubidlist="3",
+
+        # 출발 : 묵호
+        f_portidlist="4403",
+        f_portsubidlist="0",
+
+        # 도착 : 울릉도 도동
+        t_portidlist="4311",
+        t_portsubidlist="3",
     ),
 
     # 2026-08-17
     WatchItem(
         route="울릉도 도동 → 묵호",
         masterdate="2026-08-17",
-        departure_time="12:40",
+
+        departure_time="",
+
         vessel="씨스타 1",
-        t_portidlist="4403",
-        t_portsubidlist="0",
+
+        # 출발 : 울릉도 도동
         f_portidlist="4311",
         f_portsubidlist="3",
+
+        # 도착 : 묵호
+        t_portidlist="4403",
+        t_portsubidlist="0",
     ),
 ]
