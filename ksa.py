@@ -10,11 +10,11 @@ class KSAClient:
 
     def search(
         self,
-        date: str,
-        from_port: str,
-        from_sub: str,
-        to_port: str,
-        to_sub: str,
+        date,
+        from_port,
+        from_sub,
+        to_port,
+        to_sub,
     ):
 
         payload = {
@@ -27,61 +27,51 @@ class KSAClient:
             "sourcesiteid": "inew",
         }
 
-        r = self.session.post(
+        response = self.session.post(
             API_URL,
             data=payload,
             timeout=20,
         )
 
-        r.raise_for_status()
+        response.raise_for_status()
 
-        data = r.json()
+        data = response.json()
 
         if not data.get("result"):
             return []
 
         return data["result"]
-
-    def available(self, ship):
+            @staticmethod
+    def is_available(ship):
 
         return ship.get("ispossible") == "1"
 
-    def reason(self, ship):
-
-        return ship.get("impossiblereason", "")
-
-    def vessel(self, ship):
+    @staticmethod
+    def vessel(ship):
 
         return ship.get("vessel", "")
 
-    def departure(self, ship):
+    @staticmethod
+    def departure(ship):
 
         return ship.get("departuretime", "")
 
-    def arrival(self, ship):
+    @staticmethod
+    def arrival(ship):
 
         return ship.get("arrivaltime", "")
 
-    def company(self, ship):
+    @staticmethod
+    def company(ship):
 
         return ship.get("company", "")
 
-    def capacity(self, ship):
-
-        return int(ship.get("capacity", 0))
-
-    def occupied(self, ship):
-
-        return int(ship.get("occupiedcnt", 0))
-
-    def remain(self, ship):
-
-        return self.capacity(ship) - self.occupied(ship)
-
-    def notice(self, ship):
-
-        return ship.get("onlinecntnotice", "")
-
-    def impossible_reason(self, ship):
+    @staticmethod
+    def reason(ship):
 
         return ship.get("impossiblereason", "")
+
+    @staticmethod
+    def notice(ship):
+
+        return ship.get("onlinecntnotice", "")
