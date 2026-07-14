@@ -17,6 +17,7 @@ class StateManager:
             return {}
 
         try:
+
             with self.path.open(
                 "r",
                 encoding="utf-8",
@@ -53,12 +54,23 @@ class StateManager:
         vessel: dict,
     ) -> str:
 
+        """
+        배편별 상태 관리
+
+        날짜
+        노선
+        출발시간
+        선박
+        객실ID
+        """
+
         return "|".join(
             [
                 watch.masterdate,
-                watch.name,
+                watch.route,
                 KSAClient.departure(vessel),
-                vessel["vessel"],
+                KSAClient.vessel_name(vessel),
+                KSAClient.classes_id(vessel),
             ]
         )
 
@@ -73,7 +85,10 @@ class StateManager:
             vessel,
         )
 
-        return self.state.get(key, False)
+        return self.state.get(
+            key,
+            False,
+        )
 
     def set_notified(
         self,
@@ -113,15 +128,21 @@ class StateManager:
         vessels: list[dict],
     ):
         """
-        해당 노선이 모두 예약불가가 되었을 때
+        해당 노선에 예약 가능한 객실이 하나도 없으면
         상태를 초기화한다.
         """
 
+        #
+        # 하나라도 예약가능이면 유지
+        #
         for vessel in vessels:
 
             if KSAClient.is_possible(vessel):
                 return
 
+        #
+        # 전부 예약불가이면 초기화
+        #
         for vessel in vessels:
 
             key = self.make_key(
