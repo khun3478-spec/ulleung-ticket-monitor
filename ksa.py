@@ -1,77 +1,91 @@
 import requests
-from config import API_URL, HEADERS
+
+from config import (
+    COMMON_PAYLOAD,
+    KSA_API_URL,
+    REQUEST_HEADERS,
+    REQUEST_TIMEOUT,
+)
 
 
 class KSAClient:
-
     def __init__(self):
         self.session = requests.Session()
-        self.session.headers.update(HEADERS)
+        self.session.headers.update(REQUEST_HEADERS)
 
-    def search(
-        self,
-        date,
-        from_port,
-        from_sub,
-        to_port,
-        to_sub,
-    ):
-
+    def get_departure_list(self, watch: dict) -> dict:
         payload = {
-            "masterdate": date,
-            "f_portidlist": from_port,
-            "f_portsubidlist": from_sub,
-            "t_portidlist": to_port,
-            "t_portsubidlist": to_sub,
-            "lang": "ko",
-            "sourcesiteid": "inew",
+            **COMMON_PAYLOAD,
+            "masterdate": watch["masterdate"],
+            "t_portsubidlist": watch["t_portsubidlist"],
+            "t_portidlist": watch["t_portidlist"],
+            "f_portsubidlist": watch["f_portsubidlist"],
+            "f_portidlist": watch["f_portidlist"],
         }
 
         response = self.session.post(
-            API_URL,
+            KSA_API_URL,
             data=payload,
-            timeout=20,
+            timeout=REQUEST_TIMEOUT,
         )
 
         response.raise_for_status()
 
-        data = response.json()
+        return response.json()
 
-        if not data.get("result"):
-            return []
+    def find_target_sailing(self, response_json: dict, watch: dict) -> dict | None:
+        """
+        응답 JSON에서 감시 대상 선편을 찾는다.
+        """
 
-        return data["result"]
-            @staticmethod
-    def is_available(ship):
+        if isinstance(response_json, list):
+            items = response_json
+        elif isinstance(response_json, dict):
+            for key in (
+                "list",
+                "departureList",
+                "resultList",
+                "data",
+                "rows",
+            ):
+                if isinstance(response_json.get(key), list):
+                    items = response_json[key]
+                    break
+            else:
+                items = []
+        else:
+            items = []
 
-        return ship.get("ispossible") == "1"
+        for item in items:
+            ship_name = str(
+                item.get("shipname")
+                or item.get("shipName")
+                or item.get("vslnm")
+                or ""
+            ).strip()
+
+            departure_time = str(
+                item.get("departuretime")
+                or item.get("departureTime")
+                or item.get("deptime")
+                or ""
+            ).strip()
+
+            if watch["ship_name"] and ship_name != watch["ship_name"]:
+                continue
+
+            if watch["departure_time"]:
+                if departure_time != watch["departure_time"]:
+                    continue
+
+            return item
+
+        return None
 
     @staticmethod
-    def vessel(ship):
-
-        return ship.get("vessel", "")
-
-    @staticmethod
-    def departure(ship):
-
-        return ship.get("departuretime", "")
+    def is_available(item: dict) -> bool:
+        return str(item.get("ispossible", "0")) == "1"
 
     @staticmethod
-    def arrival(ship):
-
-        return ship.get("arrivaltime", "")
-
-    @staticmethod
-    def company(ship):
-
-        return ship.get("company", "")
-
-    @staticmethod
-    def reason(ship):
-
-        return ship.get("impossiblereason", "")
-
-    @staticmethod
-    def notice(ship):
-
-        return ship.get("onlinecntnotice", "")
+    def impossible_reason(item: dict) -> str:
+        return str(item.get("impossiblereason", "")).strip()
