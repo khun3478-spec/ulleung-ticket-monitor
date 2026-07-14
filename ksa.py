@@ -58,8 +58,10 @@ class KSAClient:
 
         return data.get("result", [])
 
-def find_target(self, watch: WatchItem) -> dict | None:
+def find_target(self, watch: WatchItem) -> list[dict]:
     vessels = self.search(watch)
+
+    result = []
 
     for vessel in vessels:
 
@@ -72,9 +74,9 @@ def find_target(self, watch: WatchItem) -> dict | None:
         if str(vessel.get("t_portid")) != watch.t_portidlist:
             continue
 
-        return vessel
+        result.append(vessel)
 
-    return None
+    return result
 
     @staticmethod
     def is_possible(vessel: dict) -> bool:
