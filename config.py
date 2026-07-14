@@ -1,25 +1,23 @@
 from dataclasses import dataclass
 import os
 
-# =========================
-# URLs
-# =========================
+# ==========================================================
+# KSA
+# ==========================================================
 
 BASE_URL = "https://island.theksa.co.kr"
 
-BOOKING_PAGE = f"{BASE_URL}/page/booking"
+BOOKING_URL = f"{BASE_URL}/page/booking"
 
 API_URL = f"{BASE_URL}/booking/selectDepartureList"
 
-# =========================
-# Request
-# =========================
+REQUEST_TIMEOUT = 20
 
-REQUEST_HEADERS = {
+HEADERS = {
     "Accept": "application/json, text/javascript, */*; q=0.01",
     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
     "Origin": BASE_URL,
-    "Referer": BOOKING_PAGE,
+    "Referer": BOOKING_URL,
     "User-Agent": (
         "Mozilla/5.0 "
         "(Windows NT 10.0; Win64; x64) "
@@ -36,11 +34,9 @@ COMMON_PAYLOAD = {
     "sourcesiteid": "inew",
 }
 
-REQUEST_TIMEOUT = 20
-
-# =========================
+# ==========================================================
 # Telegram
-# =========================
+# ==========================================================
 
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 
@@ -49,70 +45,67 @@ TELEGRAM_CHAT_ID = os.environ.get(
     "8622503258",
 )
 
-# =========================
+# ==========================================================
 # State
-# =========================
+# ==========================================================
 
 STATE_FILE = "state.json"
 
-# =========================
-# Watch Route
-# =========================
+# ==========================================================
+# Watch Item
+# ==========================================================
 
 
 @dataclass(frozen=True)
 class WatchItem:
-    route: str
+
+    name: str
 
     masterdate: str
 
-    departure_time: str
+    f_portid: str
+    f_portsubid: str
 
-    vessel: str
+    t_portid: str
+    t_portsubid: str
 
-    t_portidlist: str
-    t_portsubidlist: str
+    vessel: str = "씨스타 1"
 
-    f_portidlist: str
-    f_portsubidlist: str
 
+# ==========================================================
+# Watch List
+# ==========================================================
 
 WATCH_LIST = [
 
+    #
     # 2026-08-14
+    # 묵호 -> 울릉도 도동
+    #
     WatchItem(
-        route="묵호 → 울릉도 도동",
+        name="묵호 → 울릉도 도동",
         masterdate="2026-08-14",
 
-        # 시간은 더 이상 고정하지 않음
-        departure_time="",
+        f_portid="4403",
+        f_portsubid="0",
 
-        vessel="씨스타 1",
-
-        # 출발 : 묵호
-        f_portidlist="4403",
-        f_portsubidlist="0",
-
-        # 도착 : 울릉도 도동
-        t_portidlist="4311",
-        t_portsubidlist="3",
+        t_portid="4311",
+        t_portsubid="3",
     ),
 
+    #
     # 2026-08-17
+    # 울릉도 도동 -> 묵호
+    #
     WatchItem(
-        route="울릉도 도동 → 묵호",
+        name="울릉도 도동 → 묵호",
         masterdate="2026-08-17",
 
-        departure_time="",
+        f_portid="4311",
+        f_portsubid="3",
 
-        vessel="씨스타 1",
-
-        # 출발 : 울릉도 도동
-        f_portidlist="4311",
-        f_portsubidlist="3",
-
-        # 도착 : 묵호
-        t_portidlist="4403",
-        t_portsubidlist="0",
+        t_portid="4403",
+        t_portsubid="0",
     ),
+
 ]
