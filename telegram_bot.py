@@ -29,14 +29,20 @@ class TelegramBot:
         if remain < 0:
             remain = 0
 
-        message = (
-            "🚢 <b>울릉도 예약 가능!</b>\n\n"
-            f"노선 : {watch.route}\n"
-            f"출발일 : {watch.masterdate}\n"
-            f"출발시간 : {watch.departure_time}\n"
-            f"선박 : {watch.vessel}\n"
-            f"예약 가능 : {remain}석\n\n"
-            f"<a href=\"{BOOKING_PAGE}\">예약페이지 바로가기</a>"
+departure_time = (
+    vessel.get("departuretime", "")
+    .split(" ")[-1]
+)
+
+message = (
+    "🚢 <b>울릉도 예약 가능!</b>\n\n"
+    f"노선 : {watch.route}\n"
+    f"출발일 : {watch.masterdate}\n"
+    f"출발시간 : {departure_time}\n"
+    f"선박 : {vessel.get('vessel')}\n"
+    f"예약 가능 : {remain}석\n\n"
+    f"<a href=\"{BOOKING_PAGE}\">예약페이지 바로가기</a>"
+)
         )
 
         response = requests.post(
