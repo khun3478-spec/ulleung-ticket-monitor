@@ -1,10 +1,12 @@
 import requests
 
 from config import (
+    API_URL,
+    BOOKING_PAGE,
     COMMON_PAYLOAD,
-    KSA_API_URL,
     REQUEST_HEADERS,
     REQUEST_TIMEOUT,
+    WatchItem,
 )
 
 
@@ -13,79 +15,85 @@ class KSAClient:
         self.session = requests.Session()
         self.session.headers.update(REQUEST_HEADERS)
 
-    def get_departure_list(self, watch: dict) -> dict:
+    def _initialize_session(self) -> None:
+        """
+        예약 페이지를 먼저 호출하여
+        JSESSIONID를 발급받는다.
+        """
+
+        response = self.session.get(
+            BOOKING_PAGE,
+            timeout=REQUEST_TIMEOUT,
+        )
+
+        response.raise_for_status()
+
+    def search(self, watch: WatchItem) -> list[dict]:
+        self._initialize_session()
+
         payload = {
             **COMMON_PAYLOAD,
-            "masterdate": watch["masterdate"],
-            "t_portsubidlist": watch["t_portsubidlist"],
-            "t_portidlist": watch["t_portidlist"],
-            "f_portsubidlist": watch["f_portsubidlist"],
-            "f_portidlist": watch["f_portidlist"],
+            "masterdate": watch.masterdate,
+            "t_portsubidlist": watch.t_portsubidlist,
+            "t_portidlist": watch.t_portidlist,
+            "f_portsubidlist": watch.f_portsubidlist,
+            "f_portidlist": watch.f_portidlist,
         }
 
         response = self.session.post(
-            KSA_API_URL,
+            API_URL,
             data=payload,
             timeout=REQUEST_TIMEOUT,
         )
 
         response.raise_for_status()
 
-        return response.json()
+        data = response.json()
 
-    def find_target_sailing(self, response_json: dict, watch: dict) -> dict | None:
-        """
-        응답 JSON에서 감시 대상 선편을 찾는다.
-        """
+        if data.get("errCode") != 0:
+            raise RuntimeError(
+                f"KSA API Error : {data.get('errCode')} "
+                f"{data.get('message')}"
+            )
 
-        if isinstance(response_json, list):
-            items = response_json
-        elif isinstance(response_json, dict):
-            for key in (
-                "list",
-                "departureList",
-                "resultList",
-                "data",
-                "rows",
-            ):
-                if isinstance(response_json.get(key), list):
-                    items = response_json[key]
-                    break
-            else:
-                items = []
-        else:
-            items = []
+        return data.get("result", [])
 
-        for item in items:
-            ship_name = str(
-                item.get("shipname")
-                or item.get("shipName")
-                or item.get("vslnm")
-                or ""
-            ).strip()
+    def find_target(self, watch: WatchItem) -> dict | None:
+        vessels = self.search(watch)
 
-            departure_time = str(
-                item.get("departuretime")
-                or item.get("departureTime")
-                or item.get("deptime")
-                or ""
-            ).strip()
+        for vessel in vessels:
 
-            if watch["ship_name"] and ship_name != watch["ship_name"]:
+            if vessel.get("vessel") != watch.vessel:
                 continue
 
-            if watch["departure_time"]:
-                if departure_time != watch["departure_time"]:
-                    continue
+            departure = (
+                vessel.get("departuretime", "")
+                .split(" ")[-1]
+                .strip()
+            )
 
-            return item
+            if departure != watch.departure_time:
+                continue
+
+            return vessel
 
         return None
 
     @staticmethod
-    def is_available(item: dict) -> bool:
-        return str(item.get("ispossible", "0")) == "1"
+    def is_possible(vessel: dict) -> bool:
+        return vessel.get("ispossible") == "1"
 
     @staticmethod
-    def impossible_reason(item: dict) -> str:
-        return str(item.get("impossiblereason", "")).strip()
+    def impossible_reason(vessel: dict) -> str:
+        return vessel.get("impossiblereason", "")
+
+    @staticmethod
+    def available_count(vessel: dict) -> int:
+        capacity = int(float(vessel.get("capacity", 0)))
+        occupied = int(float(vessel.get("occupiedcnt", 0)))
+        remain = capacity - occupied
+
+        if remain < 0:
+            remain = 0
+
+        return remain
