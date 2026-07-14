@@ -52,7 +52,7 @@ class KSAClient:
 
         data = response.json()
 
-        print(data.keys())
+        print(data)
 
         print("result :", len(data.get("result", [])))
 
