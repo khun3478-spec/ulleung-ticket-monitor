@@ -58,26 +58,23 @@ class KSAClient:
 
         return data.get("result", [])
 
-    def find_target(self, watch: WatchItem) -> dict | None:
-        vessels = self.search(watch)
+def find_target(self, watch: WatchItem) -> dict | None:
+    vessels = self.search(watch)
 
-        for vessel in vessels:
+    for vessel in vessels:
 
-            if vessel.get("vessel") != watch.vessel:
-                continue
+        if vessel.get("vessel") != watch.vessel:
+            continue
 
-            departure = (
-                vessel.get("departuretime", "")
-                .split(" ")[-1]
-                .strip()
-            )
+        if str(vessel.get("f_portid")) != watch.f_portidlist:
+            continue
 
-            if departure != watch.departure_time:
-                continue
+        if str(vessel.get("t_portid")) != watch.t_portidlist:
+            continue
 
-            return vessel
+        return vessel
 
-        return None
+    return None
 
     @staticmethod
     def is_possible(vessel: dict) -> bool:
