@@ -11,90 +11,68 @@ from config import (
 
 
 class KSAClient:
-
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
 
     def create_session(self) -> None:
-        """
-        예약 페이지 접속
-        JSESSIONID 자동 생성
-        """
-
+        """예약 페이지 접속하여 JSESSIONID 생성"""
         response = self.session.get(
             BOOKING_URL,
+            timeout=REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+
+    def search(self, watch: WatchItem) -> list[dict]:
+        self.create_session()
+
+        payload = {
+            **COMMON_PAYLOAD,
+            "masterdate": watch.masterdate,
+            "t_portsubidlist": watch.t_portsubid,
+            "t_portidlist": watch.t_portid,
+            "f_portsubidlist": watch.f_portsubid,
+            "f_portidlist": watch.f_portid,
+        }
+
+        response = self.session.post(
+            API_URL,
+            data=payload,
             timeout=REQUEST_TIMEOUT,
         )
 
         response.raise_for_status()
 
-   def search(self, watch: WatchItem) -> list[dict]:
+        data = response.json()
 
-    self.create_session()
+        if data.get("errCode") != 0:
+            raise RuntimeError(
+                f"KSA Error : {data.get('errCode')} {data.get('message')}"
+            )
 
-    payload = {
-        **COMMON_PAYLOAD,
-        "masterdate": watch.masterdate,
-        "t_portsubidlist": watch.t_portsubid,
-        "t_portidlist": watch.t_portid,
-        "f_portsubidlist": watch.f_portsubid,
-        "f_portidlist": watch.f_portid,
-    }
+        # 실제 데이터는 data 안에 존재
+        return data["data"]["resultAll"]
 
-    response = self.session.post(
-        API_URL,
-        data=payload,
-        timeout=REQUEST_TIMEOUT,
-    )
-
-    response.raise_for_status()
-
-    data = response.json()
-
-    if data.get("errCode") != 0:
-        raise RuntimeError(
-            f"KSA Error : {data.get('errCode')}"
-        )
-
-    # 실제 데이터는 data 안에 있음
-    return data["data"]["resultAll"]
-
-    def get_vessels(
-        self,
-        watch: WatchItem,
-    ) -> list[dict]:
-
+    def get_vessels(self, watch: WatchItem) -> list[dict]:
         vessels = []
-    
-        
+
         for item in self.search(watch):
 
-
-            #
-            # 노선 확인
-            #
             if str(item.get("f_portid")) != watch.f_portid:
                 continue
 
             if str(item.get("t_portid")) != watch.t_portid:
                 continue
 
-            #
-            # 선박 확인
-            #
-            if item.get("vessel") != watch.vessel:
+            if item.get("vessel", "").replace(" ", "") != watch.vessel.replace(" ", ""):
                 continue
 
             vessels.append(item)
 
-        #
-        # 출항시간 + 객실 기준 정렬
-        #
         vessels.sort(
             key=lambda x: (
-                x.get("departuretime"),
-                int(x.get("classesid", 0)),
+                x.get("departuretime", ""),
+                int(x.get("classesid", "0")),
             )
         )
 
@@ -102,11 +80,11 @@ class KSAClient:
 
     @staticmethod
     def departure(vessel: dict) -> str:
-        return vessel["departuretime"].split(" ")[1]
+        return vessel.get("departure", vessel["departuretime"].split(" ")[1])
 
     @staticmethod
     def arrival(vessel: dict) -> str:
-        return vessel["arrivaltime"].split(" ")[1]
+        return vessel.get("arrival", vessel["arrivaltime"].split(" ")[1])
 
     @staticmethod
     def classes(vessel: dict) -> str:
@@ -114,13 +92,11 @@ class KSAClient:
 
     @staticmethod
     def classes_id(vessel: dict) -> str:
-        return str(vessel.get("classesid"))
+        return str(vessel.get("classesid", ""))
 
     @staticmethod
     def remain(vessel: dict) -> int:
-        """
-        실제 온라인 예약 가능 좌석
-        """
+        # KSA에서 제공하는 실제 온라인 예약 가능 좌석
         return int(float(vessel.get("onlinecnt", 0)))
 
     @staticmethod
@@ -129,10 +105,7 @@ class KSAClient:
 
     @staticmethod
     def impossible_reason(vessel: dict) -> str:
-        return vessel.get(
-            "impossiblereason",
-            "",
-        )
+        return vessel.get("impossiblereason", "")
 
     @staticmethod
     def vessel_name(vessel: dict) -> str:
