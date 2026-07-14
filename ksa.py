@@ -16,11 +16,12 @@ class KSAClient:
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
 
-    def _create_session(self):
+    def create_session(self) -> None:
         """
-        예약 페이지를 먼저 호출하여
-        JSESSIONID를 발급받는다.
+        예약 페이지 접속
+        JSESSIONID 자동 생성
         """
+
         response = self.session.get(
             BOOKING_URL,
             timeout=REQUEST_TIMEOUT,
@@ -28,7 +29,9 @@ class KSAClient:
 
         response.raise_for_status()
 
-    def _request(self, watch: WatchItem) -> dict:
+    def search(self, watch: WatchItem) -> list[dict]:
+
+        self.create_session()
 
         payload = {
             **COMMON_PAYLOAD,
@@ -51,63 +54,84 @@ class KSAClient:
 
         if data.get("errCode") != 0:
             raise RuntimeError(
-                f"KSA API Error : {data.get('errCode')} {data.get('message')}"
+                f"KSA Error : {data.get('errCode')} "
+                f"{data.get('message')}"
             )
 
-        return data
+        return data.get("resultAll", [])
 
-    def get_vessels(self, watch: WatchItem) -> list[dict]:
-        """
-        감시 대상 노선의 모든 선편 반환
-        """
-
-        self._create_session()
-
-        data = self._request(watch)
+    def get_vessels(
+        self,
+        watch: WatchItem,
+    ) -> list[dict]:
 
         vessels = []
 
-        #
-        # resultAll 사용
-        #
-        for item in data.get("resultAll", []):
+        for item in self.search(watch):
 
-            if item.get("vessel") != watch.vessel:
-                continue
-
+            #
+            # 노선 확인
+            #
             if str(item.get("f_portid")) != watch.f_portid:
                 continue
 
             if str(item.get("t_portid")) != watch.t_portid:
                 continue
 
+            #
+            # 선박 확인
+            #
+            if item.get("vessel") != watch.vessel:
+                continue
+
             vessels.append(item)
 
         #
-        # 층(1층/2층) 중복 제거
+        # 출항시간 + 객실 기준 정렬
         #
-        unique = {}
-
-        for vessel in vessels:
-
-            key = (
-                vessel["departuretime"],
-                vessel["vessel"],
+        vessels.sort(
+            key=lambda x: (
+                x.get("departuretime"),
+                int(x.get("classesid", 0)),
             )
+        )
 
-            #
-            # 같은 출항시간이면
-            # 예약 가능한 정보 우선
-            #
-            if key not in unique:
-                unique[key] = vessel
-                continue
+        return vessels
 
-            if vessel.get("ispossible") == "1":
-                unique[key] = vessel
+    @staticmethod
+    def departure(vessel: dict) -> str:
+        return vessel["departuretime"].split(" ")[1]
 
-        return list(unique.values())
+    @staticmethod
+    def arrival(vessel: dict) -> str:
+        return vessel["arrivaltime"].split(" ")[1]
+
+    @staticmethod
+    def classes(vessel: dict) -> str:
+        return vessel.get("classes", "")
+
+    @staticmethod
+    def classes_id(vessel: dict) -> str:
+        return str(vessel.get("classesid"))
+
+    @staticmethod
+    def remain(vessel: dict) -> int:
+        """
+        실제 온라인 예약 가능 좌석
+        """
+        return int(float(vessel.get("onlinecnt", 0)))
 
     @staticmethod
     def is_possible(vessel: dict) -> bool:
-        return vessel.get("
+        return vessel.get("ispossible") == "1"
+
+    @staticmethod
+    def impossible_reason(vessel: dict) -> str:
+        return vessel.get(
+            "impossiblereason",
+            "",
+        )
+
+    @staticmethod
+    def vessel_name(vessel: dict) -> str:
+        return vessel.get("vessel", "")
