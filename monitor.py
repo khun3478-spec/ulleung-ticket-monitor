@@ -6,7 +6,8 @@ from state import StateManager
 from telegram_bot import TelegramBot
 
 
-def log(message: str) -> None:
+def log(message: str):
+
     print(
         f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}",
         flush=True,
@@ -14,7 +15,10 @@ def log(message: str) -> None:
 
 
 def main():
-    log("===== 울릉도 티켓 모니터 시작 =====")
+
+    log("========================================")
+    log("울릉도 티켓 모니터 시작")
+    log("========================================")
 
     ksa = KSAClient()
     telegram = TelegramBot()
@@ -22,58 +26,94 @@ def main():
 
     for watch in WATCH_LIST:
 
-        log(
-            f"조회 : {watch.route} "
-            f"({watch.masterdate} {watch.departure_time})"
-        )
+        log("")
+        log(f"노선 : {watch.name}")
+        log(f"날짜 : {watch.masterdate}")
 
         try:
-            vessel = ksa.find_target(watch)
 
-            if vessel is None:
-                log("대상 선편을 찾지 못했습니다.")
+            vessels = ksa.get_vessels(watch)
+
+            if not vessels:
+
+                log("조회 결과 없음")
                 continue
 
-            possible = ksa.is_possible(vessel)
-            reason = ksa.impossible_reason(vessel)
-            remain = ksa.available_count(vessel)
+            available_found = False
 
-            log(
-                f"선박={vessel.get('vessel')} "
-                f"출항={vessel.get('departuretime')} "
-                f"ispossible={vessel.get('ispossible')} "
-                f"잔여={remain} "
-                f"사유={reason}"
-            )
+            for vessel in vessels:
 
-            if possible:
+                departure = ksa.departure(vessel)
 
-                if state.is_notified(watch):
-                    log("이미 알림 발송됨")
-                    continue
+                remain = ksa.remain(vessel)
 
-                telegram.send_available(
-                    watch,
-                    vessel,
+                possible = ksa.is_possible(vessel)
+
+                reason = ksa.impossible_reason(vessel)
+
+                log(
+                    f"[{departure}] "
+                    f"ispossible={vessel['ispossible']} "
+                    f"remain={remain} "
+                    f"reason={reason}"
                 )
 
-                state.set_notified(watch)
+                #
+                # 예약 가능
+                #
+                if possible:
 
-                log("Telegram 발송 완료")
+                    available_found = True
 
-            else:
+                    if state.is_notified(
+                        watch,
+                        vessel,
+                    ):
 
-                state.clear(watch)
+                        log(
+                            f"[{departure}] 이미 알림 발송"
+                        )
 
-                log("예약 불가")
+                        continue
+
+                    telegram.send_available(
+                        watch,
+                        vessel,
+                    )
+
+                    state.set_notified(
+                        watch,
+                        vessel,
+                    )
+
+                    log(
+                        f"[{departure}] Telegram 발송 완료"
+                    )
+
+            #
+            # 모든 배편이 예약불가
+            #
+            if not available_found:
+
+                state.clear_route(
+                    watch,
+                    vessels,
+                )
+
+                log("예약 가능한 배편 없음")
 
         except Exception as e:
 
-            log(f"ERROR : {type(e).__name__}")
+            log(
+                f"ERROR : {type(e).__name__}"
+            )
 
             log(str(e))
 
-    log("===== 종료 =====")
+    log("")
+    log("========================================")
+    log("모니터 종료")
+    log("========================================")
 
 
 if __name__ == "__main__":
