@@ -29,42 +29,36 @@ class KSAClient:
 
         response.raise_for_status()
 
-    def search(self, watch: WatchItem) -> list[dict]:
+   def search(self, watch: WatchItem) -> list[dict]:
 
-        self.create_session()
+    self.create_session()
 
-        payload = {
-            **COMMON_PAYLOAD,
-            "masterdate": watch.masterdate,
-            "t_portsubidlist": watch.t_portsubid,
-            "t_portidlist": watch.t_portid,
-            "f_portsubidlist": watch.f_portsubid,
-            "f_portidlist": watch.f_portid,
-        }
+    payload = {
+        **COMMON_PAYLOAD,
+        "masterdate": watch.masterdate,
+        "t_portsubidlist": watch.t_portsubid,
+        "t_portidlist": watch.t_portid,
+        "f_portsubidlist": watch.f_portsubid,
+        "f_portidlist": watch.f_portid,
+    }
 
-        response = self.session.post(
-            API_URL,
-            data=payload,
-            timeout=REQUEST_TIMEOUT,
+    response = self.session.post(
+        API_URL,
+        data=payload,
+        timeout=REQUEST_TIMEOUT,
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+    if data.get("errCode") != 0:
+        raise RuntimeError(
+            f"KSA Error : {data.get('errCode')}"
         )
 
-        response.raise_for_status()
-
-        data = response.json()
-
-        print(data)
-
-        print("result :", len(data.get("result", [])))
-
-        print("resultAll :", len(data.get("resultAll", [])))
-
-        if data.get("errCode") != 0:
-            raise RuntimeError(
-                f"KSA Error : {data.get('errCode')} "
-                f"{data.get('message')}"
-            )
-
-        return data.get("resultAll", [])
+    # 실제 데이터는 data 안에 있음
+    return data["data"]["resultAll"]
 
     def get_vessels(
         self,
@@ -76,7 +70,7 @@ class KSAClient:
         
         for item in self.search(watch):
 
-            print(item)
+
             #
             # 노선 확인
             #
