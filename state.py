@@ -1,51 +1,60 @@
 import json
 import os
 
-
-STATE_FILE = "state.json"
+from config import STATE_FILE
 
 
 class StateManager:
-
     def __init__(self):
-        self.state = {}
-        self.load()
+        self.state = self._load()
 
-    def load(self):
-
+    def _load(self) -> dict:
         if not os.path.exists(STATE_FILE):
-            self.state = {}
-            return
+            return {}
 
-        with open(STATE_FILE, "r", encoding="utf-8") as f:
-            try:
-                self.state = json.load(f)
-            except Exception:
-                self.state = {}
+        try:
+            with open(STATE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
 
-    def save(self):
+            if isinstance(data, dict):
+                return data
 
+            return {}
+
+        except Exception:
+            return {}
+
+    def save(self) -> None:
         with open(STATE_FILE, "w", encoding="utf-8") as f:
             json.dump(
                 self.state,
                 f,
                 ensure_ascii=False,
-                indent=4,
+                indent=2,
             )
 
-    def is_changed(self, key, value):
+    @staticmethod
+    def make_key(watch: dict) -> str:
+        return "|".join(
+            [
+                watch["masterdate"],
+                watch["name"],
+                watch["departure_time"],
+                watch["ship_name"],
+            ]
+        )
 
-        old = self.state.get(key)
+    def already_notified(self, watch: dict) -> bool:
+        key = self.make_key(watch)
+        return self.state.get(key, False)
 
-        if old == value:
-            return False
-
-        self.state[key] = value
+    def mark_notified(self, watch: dict) -> None:
+        key = self.make_key(watch)
+        self.state[key] = True
         self.save()
 
-        return True
-
-    def reset(self, key):
+    def reset(self, watch: dict) -> None:
+        key = self.make_key(watch)
 
         if key in self.state:
             del self.state[key]
