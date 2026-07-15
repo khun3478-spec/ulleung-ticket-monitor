@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from config import WATCH_LIST
+from config import (WATCH_LIST, TEST_MODE)
 from ksa import KSAClient
 from state import StateManager
 from telegram_bot import TelegramBot
@@ -80,11 +80,11 @@ def main():
                 #
                 # 예약 가능
                 #
-                if possible:
+                if TEST_MODE or possible:
 
                     available_exists = True
 
-                    if state.is_notified(
+                    if (not TEST_MODE) and state.is_notified(
                         watch,
                         vessel,
                     ):
