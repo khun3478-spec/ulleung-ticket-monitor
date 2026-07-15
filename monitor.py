@@ -100,12 +100,13 @@ def main():
                     telegram.send_available(
                         watch,
                         vessel,
+                        possible,
                     )
 
                     state.set_notified(
                         watch,
                         vessel,
-                        possible,
+                        #possible,
                     )
 
                     log(
