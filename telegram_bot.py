@@ -7,7 +7,7 @@ from config import (
     TELEGRAM_CHAT_ID,
     WatchItem,
 )
-from monitor import possible
+
 from ksa import KSAClient
 
 
