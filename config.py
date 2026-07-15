@@ -104,3 +104,5 @@ WATCH_LIST = [
     ),
 
 ]
+
+TEST_MODE = True
