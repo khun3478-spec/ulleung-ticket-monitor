@@ -76,17 +76,17 @@ WATCH_LIST = [
     #
     # 묵호 → 울릉도 도동
     #
-    WatchItem(
-        route="묵호 → 울릉도 도동",
+    # WatchItem(
+    #    route="묵호 → 울릉도 도동",
 
-        masterdate="2026-08-14",
+    #    masterdate="2026-08-14",
 
-        f_portid="4403",
-        f_portsubid="0",
+    #    f_portid="4403",
+    #    f_portsubid="0",
 
-        t_portid="4311",
-        t_portsubid="3",
-    ),
+    #    t_portid="4311",
+    #    t_portsubid="3",
+    # ),
 
     #
     # 울릉도 도동 → 묵호
