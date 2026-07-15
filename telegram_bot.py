@@ -24,6 +24,7 @@ class TelegramBot:
         self,
         watch: WatchItem,
         vessel: dict,
+        possible: bool,
     ) -> None:
 
         departure = KSAClient.departure(vessel)
@@ -31,8 +32,12 @@ class TelegramBot:
         remain = KSAClient.remain(vessel)
         classes = KSAClient.classes(vessel)
 
+        if possible:
+            title = "🚢 <b>울릉도 예약 가능!</b>"
+        else:
+            title = "🚢 <b>울릉도 예약 불가!</b>"
         message = (
-            "🚢 <b>울릉도 예약 가능!</b>\n\n"
+            f"{title}\n\n"
 
             f"🛳 노선 : {watch.route}\n"
             f"📅 출발일 : {watch.masterdate}\n"
