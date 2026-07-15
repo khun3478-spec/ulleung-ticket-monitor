@@ -7,6 +7,7 @@ from config import (
     TELEGRAM_CHAT_ID,
     WatchItem,
 )
+from monitor import possible
 from ksa import KSAClient
 
 
@@ -30,19 +31,35 @@ class TelegramBot:
         remain = KSAClient.remain(vessel)
         classes = KSAClient.classes(vessel)
 
-        message = (
-            "🚢 <b>울릉도 예약 가능!</b>\n\n"
+        if possible :
+            message = (
+                "🚢 <b>울릉도 예약 가능!</b>\n\n"
+    
+                f"🛳 노선 : {watch.route}\n"
+                f"📅 출발일 : {watch.masterdate}\n"
+                f"🕒 출발 : {departure}\n"
+                f"🕓 도착 : {arrival}\n"
+                f"⛴ 선박 : {KSAClient.vessel_name(vessel)}\n"
+                f"💺 객실 : {classes}\n"
+                f"✅ 온라인 예약 가능 : {remain}석\n\n"
+    
+                f"<a href=\"{BOOKING_URL}\">예약 페이지 바로가기</a>"
+            )
 
-            f"🛳 노선 : {watch.route}\n"
-            f"📅 출발일 : {watch.masterdate}\n"
-            f"🕒 출발 : {departure}\n"
-            f"🕓 도착 : {arrival}\n"
-            f"⛴ 선박 : {KSAClient.vessel_name(vessel)}\n"
-            f"💺 객실 : {classes}\n"
-            f"✅ 온라인 예약 가능 : {remain}석\n\n"
-
-            f"<a href=\"{BOOKING_URL}\">예약 페이지 바로가기</a>"
-        )
+        else : 
+            message = (
+                "🚢 <b>울릉도 예약 불가!</b>\n\n"
+    
+                f"🛳 노선 : {watch.route}\n"
+                f"📅 출발일 : {watch.masterdate}\n"
+                f"🕒 출발 : {departure}\n"
+                f"🕓 도착 : {arrival}\n"
+                f"⛴ 선박 : {KSAClient.vessel_name(vessel)}\n"
+                f"💺 객실 : {classes}\n"
+                f"✅ 온라인 예약 가능 : {remain}석\n\n"
+    
+                f"<a href=\"{BOOKING_URL}\">예약 페이지 바로가기</a>"
+            )
 
         response = requests.post(
             self.url,
