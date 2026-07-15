@@ -105,6 +105,7 @@ def main():
                     state.set_notified(
                         watch,
                         vessel,
+                        possible,
                     )
 
                     log(
